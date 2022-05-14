@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+  db:
+    image: mysql:8
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'somepassword'
+      MYSQL_DATABASE: 'wordpress'
+      MYSQL_USER: 'wordpress'
+      MYSQL_PASSWORD: 'somepassword'
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    expose:
+      - '80'
+    restart: always
+    volumes:
+      - ./change_max-upload-size.ini:/usr/local/etc/php/conf.d/change_max-upload-size.ini
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: 'wordpress'
+      WORDPRESS_DB_PASSWORD: 'somepassword'
+  https-portal:
+    depends_on:
+      - wordpress
+    image: steveltn/https-portal:1
+    ports:
+      - '80:80'
+      - '443:443'
+    restart: always
+    environment:
+      DOMAINS: 'wordpress.example.com -> http://wordpress:80'
+      # STAGE: 'production' # Don't use production until staging works
+      # FORCE_RENEW: 'true'
+      CLIENT_MAX_BODY_SIZE: '20M'
+volumes:
+  db_data:
+  https-portal-data:
